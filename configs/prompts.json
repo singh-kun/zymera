@@ -1,0 +1,15 @@
+{
+  "_comment": "Prompt style library, deep-merged over built-in defaults (src/zymera/prompts.py). Add your own styles here; each may define prefix, suffix, and negative.",
+  "styles": {
+    "natural_light_portrait": {
+      "prefix": "candid portrait photo, ",
+      "suffix": ", golden hour sunlight, soft shadows, shallow depth of field, 50mm lens, authentic expression",
+      "negative": "cartoon, anime, 3d render, studio lighting, posed, stiff"
+    },
+    "product_lifestyle": {
+      "prefix": "lifestyle photo, ",
+      "suffix": ", bright airy interior, natural window light, commercial photography, clean composition",
+      "negative": "cartoon, anime, cluttered, dark, moody"
+    }
+  }
+}

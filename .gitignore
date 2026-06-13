@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Zymera runtime artefacts
+outputs/
+identities/*
+!identities/.gitkeep
+
+# Model weights — never commit large binaries
+*.ckpt
+*.safetensors
+*.pth
+*.pt
+*.bin
+*.gguf
+*.onnx
+
+# Configs with secrets / local overrides
+configs/local*.json
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log

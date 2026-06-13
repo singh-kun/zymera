@@ -1,0 +1,10 @@
+{
+  "_comment": "User configuration, merged over built-in defaults (src/zymera/config.py). Only put values you want to change here. Any key can also be overridden per run: zymera generate --set image.steps=40",
+  "runtime": {
+    "model_cpu_offload": true
+  },
+  "prompt": {
+    "style": "photorealistic",
+    "enhance": true
+  }
+}

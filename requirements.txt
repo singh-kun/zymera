@@ -1,0 +1,22 @@
+# Core generation stack
+# NOTE: install a CUDA-enabled torch build for your platform first, e.g.:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu130
+torch>=2.1
+diffusers>=0.31
+transformers>=4.44,<5
+accelerate>=0.30
+safetensors
+huggingface_hub
+peft>=0.11
+bitsandbytes>=0.45   # 4/8-bit quantization (NF4) — fits SDXL in 6 GB VRAM
+hf_transfer>=0.1.9  # faster model downloads (set HF_HUB_ENABLE_HF_TRANSFER=1)
+
+# Imaging / media IO
+numpy
+pillow
+opencv-python        # video frame export (diffusers export_to_video)
+imageio-ffmpeg       # bundled ffmpeg for audio/video muxing
+
+# Speech (phase 4). The maintained fork; the original "TTS" package also works.
+coqui-tts
+pyttsx3                  # system TTS fallback (offline, no model download needed)

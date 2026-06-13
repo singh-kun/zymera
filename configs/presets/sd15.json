@@ -1,0 +1,28 @@
+{
+  "_comment": "Preset for 4-6 GB GPUs: switches image phases from SDXL to an SD1.5 checkpoint. Use with: zymera generate --preset sd15 ...",
+  "image": {
+    "model": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "variant": null,
+    "vae": null,
+    "width": 512,
+    "height": 512,
+    "steps": 30,
+    "guidance_scale": 7.0
+  },
+  "identity_image": {
+    "model": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "variant": null,
+    "vae": null,
+    "width": 512,
+    "height": 512,
+    "steps": 30,
+    "guidance_scale": 7.0,
+    "ip_adapter": {
+      "repo": "h94/IP-Adapter",
+      "subfolder": "models",
+      "weight_name": "ip-adapter_sd15.bin",
+      "image_encoder_folder": "image_encoder",
+      "scale": 0.6
+    }
+  }
+}

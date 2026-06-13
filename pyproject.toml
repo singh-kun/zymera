@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zymera"
+version = "0.2.0"
+description = "Configurable multi-stage pipeline for synthetic identity media: images, video, and talking video"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "Suraj Singh", email = "singhsuraj.kun@gmail.com" }]
+keywords = [
+    "stable-diffusion", "sdxl", "animatediff", "ip-adapter",
+    "image-generation", "video-generation", "text-to-speech",
+    "synthetic-identity", "generative-ai",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# Runtime dependencies are in requirements.txt (torch builds are platform/CUDA
+# specific and must be installed separately before this package).
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/singhsuraj/zymera"
+Repository = "https://github.com/singhsuraj/zymera"
+Issues = "https://github.com/singhsuraj/zymera/issues"
+
+[project.scripts]
+zymera = "zymera.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
