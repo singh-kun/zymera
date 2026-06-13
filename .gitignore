@@ -35,6 +35,9 @@ configs/local*.json
 .idea/
 *.code-workspace
 
+# Claude Code session data (hooks, memory, tool state — never commit)
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db

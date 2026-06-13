@@ -42,10 +42,7 @@ class VideoStage(Stage):
         # included when enable_model_cpu_offload() installs its CPU-offload hooks.
         ip_cfg = self.params.get("ip_adapter") or {}
         if ip_cfg.get("enabled"):
-            import warnings
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", message=".*torch_dtype.*")
-                load_ip_adapter(pipe, ip_cfg)
+            load_ip_adapter(pipe, ip_cfg)
             self._ip_loaded = True
         set_scheduler(pipe, self.params.get("scheduler"), self.params.get("scheduler_options"))
         return pipe

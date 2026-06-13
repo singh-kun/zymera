@@ -35,21 +35,33 @@ def configure_backends(runtime: dict) -> None:
             "active" if flash else "unavailable — falling back to mem-efficient",
         )
 
-    # Silence chatty third-party deprecation warnings that add noise without
-    # any action a user can take.
-    _noisy_patterns = [
+    # Silence chatty third-party deprecation/config warnings — these are
+    # emitted via Python's warnings module.
+    _warn_patterns = [
         ".*torch_dtype.*deprecated.*",
         ".*CLIPFeatureExtractor.*deprecated.*",
         ".*config attributes.*will be ignored.*",
         ".*huggingface_hub.*cache-system.*symlinks.*",
     ]
-    for pat in _noisy_patterns:
+    for pat in _warn_patterns:
         warnings.filterwarnings("ignore", message=pat)
 
-    # Suppress INFO/DEBUG logs from model libraries — tqdm progress bars
-    # come from stderr directly and are unaffected.
+    # These same messages also come through logging (diffusers/transformers
+    # call logger.warning() directly), so we need a logging Filter too.
+    import re as _re
+
+    class _MessageFilter(logging.Filter):
+        _pats = [_re.compile(p) for p in _warn_patterns]
+
+        def filter(self, record: logging.LogRecord) -> bool:
+            msg = record.getMessage()
+            return not any(p.search(msg) for p in self._pats)
+
+    _mf = _MessageFilter()
     for lib in ("diffusers", "transformers", "accelerate", "comtypes", "pyttsx3"):
-        logging.getLogger(lib).setLevel(logging.WARNING)
+        lg = logging.getLogger(lib)
+        lg.setLevel(logging.WARNING)
+        lg.addFilter(_mf)
 
 
 def build_quantization_config(qcfg: dict | None, dtype):
