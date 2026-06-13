@@ -45,3 +45,6 @@ desktop.ini
 
 # Logs
 *.log
+
+# Local scratch / personal testing notes (untracked by design)
+LOCAL_*.md
