@@ -3,7 +3,7 @@
 ## Development setup
 
 ```bash
-git clone https://github.com/singhsuraj/zymera.git
+git clone https://github.com/singh-kun/zymera.git
 cd zymera
 pip install torch --index-url https://download.pytorch.org/whl/cu130
 pip install -r requirements.txt

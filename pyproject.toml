@@ -32,9 +32,9 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/singhsuraj/zymera"
-Repository = "https://github.com/singhsuraj/zymera"
-Issues = "https://github.com/singhsuraj/zymera/issues"
+Homepage = "https://github.com/singh-kun/zymera"
+Repository = "https://github.com/singh-kun/zymera"
+Issues = "https://github.com/singh-kun/zymera/issues"
 
 [project.scripts]
 zymera = "zymera.cli:main"
