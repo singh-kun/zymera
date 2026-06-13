@@ -67,6 +67,38 @@ def build_parser() -> argparse.ArgumentParser:
     doctor = sub.add_parser("doctor", help="Check the environment (GPU, deps, ffmpeg)")
     doctor.add_argument("--config", help="Path to a config JSON file")
 
+    # Agentic planner/executor: requirement -> plan -> assets -> recipe -> (run).
+    auto = sub.add_parser("auto", help="Plan models/LoRAs/config for a requirement (agentic)")
+    auto.add_argument("requirement", help="Natural-language description of what you want")
+    auto.add_argument("--run", action="store_true", help="Generate after planning")
+    auto.add_argument("--yes", "-y", action="store_true", help="Skip confirmation prompts")
+    auto.add_argument("--save", metavar="NAME", help="Save the plan as a reusable recipe")
+    auto.add_argument("--prompt", help="Generation prompt (defaults to the requirement)")
+    auto.add_argument("--identity", help="Identity ID (phase2+)")
+    auto.add_argument("--text", help="Speech text (phase4)")
+    auto.add_argument("--output", help="Output filename")
+    auto.add_argument("--seed", type=int)
+    auto.add_argument("--nsfw", action="store_true",
+                      help="Allow SYNTHETIC NSFW assets (content_mode=nsfw); real people stay blocked")
+    auto.add_argument("--preset", help="Force a base preset instead of auto-detecting")
+    auto.add_argument("--config", help="Path to a config JSON file")
+
+    # Recipes = saved "skills".
+    recipe = sub.add_parser("recipe", help="Manage saved recipes (skills)")
+    recipe_sub = recipe.add_subparsers(dest="recipe_command", required=True)
+    recipe_sub.add_parser("list", help="List saved recipes").add_argument("--config")
+    show = recipe_sub.add_parser("show", help="Print a recipe's JSON")
+    show.add_argument("name")
+    show.add_argument("--config")
+    run = recipe_sub.add_parser("run", help="Download a recipe's assets and generate")
+    run.add_argument("name")
+    run.add_argument("--prompt", required=True)
+    run.add_argument("--identity")
+    run.add_argument("--text")
+    run.add_argument("--output")
+    run.add_argument("--seed", type=int)
+    run.add_argument("--config")
+
     return parser
 
 
@@ -159,6 +191,53 @@ def _cmd_doctor(args) -> int:
     return run_doctor(Config.load(config_file=getattr(args, "config", None)))
 
 
+def _cmd_auto(args) -> int:
+    from zymera.agent.run import run_auto
+
+    return run_auto(args)
+
+
+def _cmd_recipe(args) -> int:
+    import json
+
+    from zymera.recipes import RecipeStore
+
+    cfg = Config.load(config_file=getattr(args, "config", None))
+    store = RecipeStore(cfg.get("paths.recipes_dir"))
+
+    if args.recipe_command == "list":
+        names = store.list()
+        if not names:
+            print('No recipes yet. Create one: zymera auto "<requirement>" --save <name>')
+        for name in names:
+            meta = store.meta(name)
+            print(f"  {name}  [{meta.get('phase', '?')}]  {meta.get('requirement', '')}")
+        return 0
+
+    if args.recipe_command == "show":
+        print(json.dumps(store.show(args.name), indent=2))
+        return 0
+
+    # run
+    preset = store.materialize(args.name, cfg)
+    meta = store.meta(args.name)
+    run_cfg = Config.load(config_file=getattr(args, "config", None), preset=preset)
+    from zymera.pipeline import Pipeline
+
+    paths = Pipeline(run_cfg).run(
+        phase=meta.get("phase", "phase1"),
+        prompt=args.prompt,
+        identity=args.identity,
+        text=args.text,
+        output=args.output,
+        style=meta.get("style"),
+        seed=args.seed,
+    )
+    for path in paths:
+        print(f"Generated: {path}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = normalize_argv(list(sys.argv[1:] if argv is None else argv))
     parser = build_parser()
@@ -178,6 +257,8 @@ def main(argv: list[str] | None = None) -> int:
         "identity": _cmd_identity,
         "styles": _cmd_styles,
         "doctor": _cmd_doctor,
+        "auto": _cmd_auto,
+        "recipe": _cmd_recipe,
     }[args.command]
     try:
         return handler(args)

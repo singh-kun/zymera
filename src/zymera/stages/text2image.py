@@ -25,6 +25,7 @@ class Text2ImageStage(Stage):
             **kwargs,
         )
         set_scheduler(pipe, self.params.get("scheduler"), self.params.get("scheduler_options"))
+        self._load_loras(pipe)
         return pipe
 
     def run(self, prompt: str, negative: str, seed: int) -> list:

@@ -20,3 +20,11 @@ imageio-ffmpeg       # bundled ffmpeg for audio/video muxing
 # Speech (phase 4). The maintained fork; the original "TTS" package also works.
 coqui-tts
 pyttsx3                  # system TTS fallback (offline, no model download needed)
+
+# Asset registry / downloads (Civitai REST). HuggingFace uses huggingface_hub above.
+requests>=2.28
+
+# Optional: Claude-powered planner for `zymera auto`. Without it (or without
+# ANTHROPIC_API_KEY) the deterministic heuristic planner is used instead.
+#   pip install anthropic
+# anthropic>=0.40

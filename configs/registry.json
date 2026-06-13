@@ -1,0 +1,17 @@
+{
+  "_comment": "User asset catalog, deep-merged over the built-in curated set (src/zymera/registry/catalog.py). Add your own checkpoints, LoRAs, and adapters here. Sources: 'hf' (needs 'repo', optional 'weight_name') or 'civitai' (needs 'model_id', optional 'version_id'). Set 'family' to 'sdxl' or 'sd15' so the planner only pairs compatible LoRAs with a base model. The content-policy gate ALWAYS blocks real-person assets (real_person/poi); NSFW entries require registry.content_mode=nsfw.",
+  "assets": {
+    "example-sdxl-lora": {
+      "type": "lora",
+      "source": "hf",
+      "repo": "ORG/REPO",
+      "weight_name": "pytorch_lora_weights.safetensors",
+      "family": "sdxl",
+      "vram_gb": 0.2,
+      "tags": ["example"],
+      "nsfw": false,
+      "real_person": false,
+      "sha256": null
+    }
+  }
+}

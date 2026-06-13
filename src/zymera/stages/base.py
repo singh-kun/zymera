@@ -142,6 +142,17 @@ class Stage(ABC):
             self.pipe = self._load()
             self._place_and_optimize()
 
+    def _load_loras(self, pipe) -> None:
+        """Attach the stage's configured LoRA adapters to ``pipe`` (no-op if
+        disabled). Call from ``_load()`` after the scheduler and before
+        ``_place_and_optimize`` so adapters are present when offload hooks
+        install. The stage's base-model family (``self.params['family']`` or
+        inferred) guards against loading an incompatible-family LoRA."""
+        lora_cfg = self.params.get("lora") or {}
+        if not lora_cfg.get("enabled") or not lora_cfg.get("adapters"):
+            return
+        load_loras(pipe, lora_cfg, self.cfg, base_family=self.params.get("family"))
+
     @abstractmethod
     def _load(self):
         """Build and return the underlying pipeline/model."""
@@ -236,3 +247,70 @@ def load_ip_adapter(pipe, ip_cfg: dict) -> None:
         image_encoder_folder=ip_cfg.get("image_encoder_folder", "image_encoder"),
     )
     pipe.set_ip_adapter_scale(ip_cfg.get("scale", 0.6))
+
+
+def load_loras(pipe, lora_cfg: dict, cfg, base_family: str | None = None) -> None:
+    """Attach configured LoRA adapters (peft) to a diffusers pipeline.
+
+    Each adapter spec is ``{"name"|"repo", "scale", "weight_name", "adapter_name"}``.
+    ``name`` is resolved against the asset catalog (policy-gated download); an
+    unknown name falls back to being treated as a direct HF repo id. Adapters
+    whose declared family conflicts with ``base_family`` are skipped rather than
+    crashing the load. Failures on any single adapter are logged and skipped.
+    """
+    import os
+
+    from zymera.registry import AssetManager
+
+    manager = AssetManager.from_config(cfg)
+    names: list[str] = []
+    scales: list[float] = []
+    for i, spec in enumerate(lora_cfg.get("adapters", [])):
+        ref = spec.get("name") or spec.get("repo")
+        if not ref:
+            log.warning("LoRA adapter #%d has no 'name'/'repo'; skipping", i)
+            continue
+        try:
+            entry = manager.catalog.resolve(ref)
+        except KeyError:
+            entry = {"name": ref, "source": "hf", "repo": ref, "family": spec.get("family")}
+        family = entry.get("family")
+        if base_family and family and family != base_family:
+            log.warning(
+                "Skipping LoRA '%s' (family %s) — incompatible with base family %s",
+                ref, family, base_family,
+            )
+            continue
+        try:
+            location = manager.ensure(entry)  # policy-gated; local path or HF repo id
+        except Exception as exc:
+            log.warning("Could not fetch LoRA '%s' (%s); skipping", ref, exc)
+            continue
+        adapter_name = spec.get("adapter_name") or f"a{i}"
+        weight_name = spec.get("weight_name") or entry.get("weight_name")
+        kwargs = {"adapter_name": adapter_name}
+        # Pass weight_name only when loading from a repo id; a resolved local
+        # path already points at the exact file.
+        if weight_name and not os.path.exists(location):
+            kwargs["weight_name"] = weight_name
+        try:
+            pipe.load_lora_weights(location, **kwargs)
+        except Exception as exc:
+            log.warning("Failed to load LoRA '%s' (%s); skipping", ref, exc)
+            continue
+        names.append(adapter_name)
+        scales.append(float(spec.get("scale", 1.0)))
+        log.info("Loaded LoRA adapter '%s' from %s (scale %.2f)", adapter_name, ref, scales[-1])
+
+    if not names:
+        return
+    try:
+        pipe.set_adapters(names, adapter_weights=scales)
+    except Exception as exc:
+        log.warning("set_adapters failed (%s); the last-loaded adapter remains active", exc)
+    if lora_cfg.get("fuse"):
+        try:
+            pipe.fuse_lora()
+            log.info("Fused %d LoRA adapter(s) into model weights", len(names))
+        except Exception as exc:
+            log.warning("fuse_lora failed (%s); continuing unfused", exc)

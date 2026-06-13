@@ -31,6 +31,10 @@ classifiers = [
 # specific and must be installed separately before this package).
 dependencies = []
 
+[project.optional-dependencies]
+# Claude-powered planner for `zymera auto` (heuristic fallback works without it).
+agent = ["anthropic>=0.40"]
+
 [project.urls]
 Homepage = "https://github.com/singh-kun/zymera"
 Repository = "https://github.com/singh-kun/zymera"

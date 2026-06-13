@@ -69,6 +69,26 @@ def test_quantization_defaults_disabled():
         assert cfg.get(f"{section}.quantization.enabled") is False, section
 
 
+def test_lora_defaults_disabled():
+    cfg = Config()
+    for section in ("image", "identity_image", "video"):
+        assert cfg.get(f"{section}.lora.enabled") is False, section
+        assert cfg.get(f"{section}.lora.adapters") == [], section
+
+
+def test_base_family_set_per_section():
+    cfg = Config()
+    assert cfg.get("image.family") == "sdxl"
+    assert cfg.get("video.family") == "sd15"
+    # VRAM presets pin phase2 to the SD1.5 family for LoRA compatibility checks.
+    for preset in ("fast", "low_vram", "quantized"):
+        assert Config(load_preset(preset)).get("identity_image.family") == "sd15", preset
+
+
+def test_content_mode_defaults_sfw():
+    assert Config().get("registry.content_mode") == "sfw"
+
+
 def test_quantized_preset():
     cfg = Config(load_preset("quantized"))
     assert cfg.get("image.quantization.enabled") is True

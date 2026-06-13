@@ -53,6 +53,7 @@ class IdentityImageStage(Stage):
             **kwargs,
         )
         set_scheduler(pipe, self.params.get("scheduler"), self.params.get("scheduler_options"))
+        self._load_loras(pipe)
         if method != "img2img" and self.params.get("ip_adapter"):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", message=".*torch_dtype.*")

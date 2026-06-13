@@ -26,6 +26,13 @@ python -m pytest tests -q   # all tests should pass without a GPU
   SD1.5 + img2img. A unit test in `tests/test_config.py` guards this.
 - Never add `flash-attn` as a dependency — it won't build on Windows. PyTorch
   SDPA already dispatches flash kernels on Ampere/Ada automatically.
+- Downloadable assets (models/LoRAs/adapters) belong in the catalog
+  (`zymera.registry.catalog` built-ins or `configs/registry.json`), never
+  hardcoded in a stage. Every download must go through `AssetManager`, which
+  screens it with `PolicyGate` first.
+- The agent layer is a thin wrapper over deterministic functions — anything
+  `zymera auto` can do must also work without an LLM (the heuristic planner).
+  Keep the single model id in `agent.model` (default `claude-opus-4-8`).
 
 ## Adding a stage
 
@@ -40,6 +47,12 @@ Zymera is for **synthetic identities only** — fully AI-generated personas or
 people who have given explicit consent. Pull requests that add code, examples,
 prompts, tests, or identities targeting real people without consent (celebrities
 included) will be rejected.
+
+The `PolicyGate` (`src/zymera/registry/policy.py`) enforces this on every asset
+download along two independent axes: **real-person content is always blocked**
+(any mode), and **NSFW is a separate `content_mode` opt-in** that only permits
+NSFW of synthetic personas. Do not weaken axis 1, and never let the NSFW toggle
+affect it — `tests/test_policy.py` guards this.
 
 ## Pull request checklist
 

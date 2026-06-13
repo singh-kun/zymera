@@ -33,6 +33,21 @@ DEFAULTS: dict[str, Any] = {
         "identities_dir": "identities",
         "outputs_dir": "outputs",
         "prompts_file": "configs/prompts.json",
+        "registry_file": "configs/registry.json",  # user asset catalog (LoRAs/models)
+        "recipes_dir": "configs/presets",            # saved "skill" recipes = preset JSONs
+        "assets_dir": None,                          # None -> ~/.cache/zymera/assets
+    },
+    # Downloadable-asset policy. content_mode is the SFW/NSFW toggle (axis 2);
+    # real-person content (axis 1) is ALWAYS blocked regardless. See
+    # zymera.registry.policy and CLAUDE.md "Responsible use".
+    "registry": {
+        "content_mode": "sfw",       # sfw | nsfw — nsfw only permits SYNTHETIC nsfw
+    },
+    # Optional Claude-powered planner/executor (zymera auto). Heuristic fallback
+    # runs when ANTHROPIC_API_KEY is unset, so a key is never required.
+    "agent": {
+        "model": "claude-opus-4-8",  # planner model id (claude-sonnet-4-6 = cheaper)
+        "max_tokens": 4096,
     },
     "prompt": {
         "style": "photorealistic",
@@ -41,6 +56,7 @@ DEFAULTS: dict[str, Any] = {
     # phase1 — pure text-to-image
     "image": {
         "model": "stabilityai/stable-diffusion-xl-base-1.0",
+        "family": "sdxl",            # base-model family; gates LoRA compatibility
         "variant": "fp16",
         "vae": "madebyollin/sdxl-vae-fp16-fix",
         "scheduler": "DPMSolverMultistepScheduler",
@@ -56,10 +72,17 @@ DEFAULTS: dict[str, Any] = {
             "backend": "bitsandbytes_4bit",   # bitsandbytes_4bit | bitsandbytes_8bit
             "components": ["unet", "text_encoder_2"],
         },
+        # LoRA adapters (peft). Each adapter: a registry asset name or HF repo.
+        "lora": {
+            "enabled": False,
+            "adapters": [],  # [{"name": "lcm-lora-sdxl", "scale": 0.8, "weight_name": null}]
+            "fuse": False,    # fuse into weights (faster, but can't switch adapters)
+        },
     },
     # phase2 — identity-conditioned image (IP-Adapter by default)
     "identity_image": {
         "model": "stabilityai/stable-diffusion-xl-base-1.0",
+        "family": "sdxl",
         "variant": "fp16",
         "vae": "madebyollin/sdxl-vae-fp16-fix",
         "scheduler": "DPMSolverMultistepScheduler",
@@ -83,10 +106,16 @@ DEFAULTS: dict[str, Any] = {
             "backend": "bitsandbytes_4bit",
             "components": ["unet", "text_encoder_2"],
         },
+        "lora": {
+            "enabled": False,
+            "adapters": [],
+            "fuse": False,
+        },
     },
     # phase3 — AnimateDiff text-to-video, identity via IP-Adapter when refs exist
     "video": {
         "model": "emilianJR/epiCRealism",  # SD1.5-family checkpoint (required by the motion adapter)
+        "family": "sd15",
         "variant": None,
         "motion_adapter": "guoyww/animatediff-motion-adapter-v1-5-2",
         "scheduler": "DDIMScheduler",
@@ -114,6 +143,11 @@ DEFAULTS: dict[str, Any] = {
             "enabled": False,            # SD1.5 UNet is small; rarely needed here
             "backend": "bitsandbytes_4bit",
             "components": ["unet"],
+        },
+        "lora": {
+            "enabled": False,
+            "adapters": [],
+            "fuse": False,
         },
     },
     # phase4 — speech synthesis
@@ -148,6 +182,7 @@ PRESETS: dict[str, dict[str, Any]] = {
         # img2img directly conditions on the reference face and is reliable on 6 GB VRAM.
         "identity_image": {
             "model": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+            "family": "sd15",
             "variant": None,
             "vae": None,
             "method": "img2img",
@@ -165,6 +200,7 @@ PRESETS: dict[str, dict[str, Any]] = {
         "image": {"width": 768, "height": 768},
         "identity_image": {
             "model": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+            "family": "sd15",
             "variant": None,
             "vae": None,
             "method": "img2img",
@@ -187,6 +223,7 @@ PRESETS: dict[str, dict[str, Any]] = {
         "image": {"quantization": {"enabled": True}},
         "identity_image": {
             "model": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+            "family": "sd15",
             "variant": None,
             "vae": None,
             "method": "img2img",

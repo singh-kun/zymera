@@ -76,6 +76,56 @@ prompt, seed, and parameters — reproduce any result exactly with `--seed <N>`.
 
 ---
 
+## Auto mode (agentic planner)
+
+Let Zymera pick the phase, preset, models, LoRAs, and style for you from a plain
+description, then download what's needed and save it as a re-runnable **recipe**:
+
+```bash
+# Plan only (prints what it would do)
+zymera auto "a cinematic synthetic portrait, anime-leaning, on my 6GB laptop"
+
+# Plan, download assets, save a recipe, and generate
+zymera auto "a synthetic woman speaking warmly to camera" \
+  --save nova_talk --run --prompt "..." --text "Hello!" --yes
+```
+
+- **With `ANTHROPIC_API_KEY` set** (and `pip install anthropic`), a Claude planner
+  reasons about the requirement and selects compatible assets.
+- **Without a key**, a deterministic heuristic planner (GPU tier + keywords) runs —
+  no network, no cost. Same plan contract either way.
+
+A **recipe** is just a preset, so anything you save is reproducible:
+
+```bash
+zymera recipe list
+zymera recipe show nova_talk
+zymera recipe run  nova_talk --prompt "..." --text "Hello!"
+```
+
+### LoRA adapters
+
+LoRAs come from the asset catalog (`configs/registry.json`, deep-merged over a
+built-in set) and load via peft. Enable per stage:
+
+```bash
+zymera generate --phase phase1 --prompt "..." \
+  --set image.lora.enabled=true \
+  --set 'image.lora.adapters=[{"name":"lcm-lora-sdxl","scale":0.8}]'
+```
+
+`name` is a catalog entry or a HuggingFace repo. Sources are `hf` or `civitai`
+(set `CIVITAI_API_KEY` for gated files). A LoRA whose `family` doesn't match the
+base model is skipped with a warning rather than crashing.
+
+> **Content policy (enforced on every download).** Two independent axes:
+> **real-person** assets are *always* blocked (synthetic identities only — see
+> Responsible use); **NSFW** is a separate opt-in via `--set registry.content_mode=nsfw`
+> (or `zymera auto --nsfw`) and only ever permits NSFW of *synthetic* personas.
+> NSFW mode never unlocks real people.
+
+---
+
 ## Configuration
 
 Settings are layered; later layers win:
@@ -124,6 +174,9 @@ zymera generate --phase phase1 --prompt "..." \
 | `video` | SD1.5 checkpoint, motion adapter, frames, fps, IP-Adapter |
 | `speech` | TTS model, speaker_wav for voice cloning |
 | `compose` | lip-sync method, codecs, intermediate cleanup |
+| `image/identity_image/video.lora` | LoRA adapters (`enabled`, `adapters`, `fuse`) |
+| `registry` | `content_mode` (`sfw`/`nsfw`); `paths.assets_dir`, `paths.registry_file` |
+| `agent` | Claude planner `model` (default `claude-opus-4-8`) and `max_tokens` |
 
 ---
 
@@ -229,9 +282,14 @@ src/zymera/
   config.py             layered config system
   prompts.py            PromptBuilder: styles + negative prompts
   identity.py           IdentityStore
+  capabilities.py       GPU/dep probing (CapabilityProfile)
   pipeline.py           phase orchestration, seeds, metadata sidecars
   cli.py                CLI entry point
   doctor.py             environment health checks
+  recipes.py            RecipeStore — saved "skill" presets
+  registry/             asset catalog, downloader, content-policy gate
+  planner/              heuristic requirement -> GenerationPlan
+  agent/                optional Claude planner/executor (zymera auto)
   stages/               one file per stage
     base.py             Stage base class, quantization, backend config
     text2image.py       phase1

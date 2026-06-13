@@ -45,6 +45,7 @@ class VideoStage(Stage):
             load_ip_adapter(pipe, ip_cfg)
             self._ip_loaded = True
         set_scheduler(pipe, self.params.get("scheduler"), self.params.get("scheduler_options"))
+        self._load_loras(pipe)
         return pipe
 
     def run(self, prompt: str, negative: str, seed: int, reference: Path | None = None) -> list:
